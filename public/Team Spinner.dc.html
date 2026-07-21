@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#e8edf4"/>
+      <circle cx="50" cy="50" r="30" fill="#ef5f11"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#1460aa" stroke-width="6" stroke-dasharray="20 10"/>
+    </svg>
+  </template>
+  <link rel="stylesheet" href="_ds/relativity-ui-5fc2d254-fad2-421d-b262-04982c9a9753/styles.css">
+  <style>
+    body { margin: 0; background: #1c2330; }
+    a { color: var(--color-interactive); }
+    a:hover { color: var(--color-interactive-hover-primary); }
+    @keyframes confetti-fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(620px) rotate(540deg); opacity: 0; }
+    }
+    @keyframes pop-in {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</helmet>
+<div style="{{ viewportStyle }}">
+<div style="{{ rootStyle }}">
+  <div style="display:flex; flex-direction:column; gap:6px; padding:44px 56px 0 56px;">
+    <div style="font-family: var(--font-family); font-size:44px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">Who's Up Next?</div>
+    <div style="font-family: var(--font-family); font-size:18px; color:rgba(255,255,255,0.75);">Spin the wheel to pick this week's team update speaker.</div>
+  </div>
+
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:40px; padding:24px 56px 40px 56px; flex:1;">
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:22px; flex:1;">
+
+      <div style="position:relative; width:620px; height:620px; display:flex; align-items:center; justify-content:center;">
+
+        <div style="{{ pointerStyle }}"></div>
+
+        <div style="{{ wheelOuterStyle }}">
+          <div style="{{ wheelStyle }}">
+            <sc-for list="{{ labelItems }}" as="item" hint-placeholder-count="15">
+              <div style="{{ item.style }}">{{ item.name }}</div>
+            </sc-for>
+          </div>
+          <div style="{{ hubStyle }}"></div>
+        </div>
+
+        <sc-if value="{{ spinning }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ flickerStyle }}">{{ flickerName }}</div>
+        </sc-if>
+
+        <sc-if value="{{ showWinnerCard }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ winnerCardStyle }}">
+            <div style="font-family: var(--font-family); font-size:15px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#ef5f11;">You're up!</div>
+            <div style="font-family: var(--font-family); font-size:38px; font-weight:700; color:#0d2438; text-align:center;">{{ winnerName }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ confettiEnabledResolved }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ confettiPieces }}" as="piece" hint-placeholder-count="0">
+            <div style="{{ piece.style }}"></div>
+          </sc-for>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button style="{{ spinButtonStyle }}" onClick="{{ handleSpin }}" disabled="{{ spinDisabled }}">{{ spinButtonLabel }}</button>
+        <button style="{{ resetButtonStyle }}" onClick="{{ handleReset }}">Reset wheel</button>
+      </div>
+
+      <div style="font-family: var(--font-family); font-size:14px; color:rgba(255,255,255,0.75);">{{ remainingLabel }}</div>
+    </div>
+
+    <div style="width:340px; flex-shrink:0; display:flex; flex-direction:column; gap:20px;">
+      <div style="{{ quickWinsStyle }}">
+        <div style="width:56px; height:6px; background:#ef5f11; border-radius:2px; margin-bottom:18px;"></div>
+        <div style="font-family: var(--font-family); font-size:26px; font-weight:800; color:#ffffff; margin-bottom:16px;">Quick Wins</div>
+        <ul style="margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;">
+          <li style="font-family: var(--font-family); font-size:14px; color:#ffffff;">Personal Win</li>
+          <li style="font-family: var(--font-family); font-size:14px; color:#ffffff;">Business Win</li>
+          <li style="font-family: var(--font-family); font-size:14px; color:#ffffff;"><span style="font-weight:700;">Question of the week:</span> {{ questionOfTheWeekResolved }}</li>
+        </ul>
+      </div>
+      <div style="{{ cardStyle }}">
+      <div style="font-family: var(--font-family); font-size:15px; font-weight:700; color:#ffffff; margin-bottom:14px;">Who's in today?</div>
+      <div style="display:flex; flex-direction:column; gap:2px; max-height:560px; overflow-y:auto;">
+        <sc-for list="{{ rosterRows }}" as="row" hint-placeholder-count="15">
+          <div style="{{ row.rowStyle }}">
+            <span class="p-checkbox" style="{{ row.checkboxWrapStyle }}" onClick="{{ row.onToggle }}">
+              <input class="p-checkbox-input" type="checkbox" checked="{{ row.present }}" disabled="{{ row.picked }}" readOnly="{{ true }}" style="{{ hiddenCheckboxInputStyle }}"></input>
+              <span style="{{ row.checkboxBoxStyle }}">
+                <sc-if value="{{ row.present }}" hint-placeholder-val="{{ false }}">✓</sc-if>
+              </span>
+            </span>
+            <div style="{{ row.textStyle }}">{{ row.name }}</div>
+            <sc-if value="{{ row.picked }}" hint-placeholder-val="{{ false }}">
+              <div style="font-family: var(--font-family); font-size:11px; font-weight:600; color: var(--color-success); text-transform:uppercase; letter-spacing:1px;">Done</div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;questionOfTheWeek&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Favorite summertime activity (can be past or present)&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;confettiEnabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;spinDurationSec&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:4,&quot;min&quot;:2,&quot;max&quot;:8,&quot;step&quot;:0.5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;colorTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Colorful&quot;,&quot;options&quot;:[&quot;Colorful&quot;,&quot;Brand Monochrome&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+
+const NAMES = [
+  "Ben Redding", "Bryan Castro", "Carolyn VanderMolen", "Chimaobi Ohaja", "Chris Fitzgerald",
+  "Diego Gomez", "Guled Muhyadin Aw-Ali", "Jacsen White", "Karol Smulik", "Mike Bialek",
+  "Mike Callaway", "Milena Wesołowska", "Nicole Robison", "Patricia Flores", "Rob Rubinas"
+];
+
+const PALETTE_COLORFUL = ['#0aa7e8', '#ede500', '#0abb94', '#edaf02', '#82cef8', '#ff702e', '#e09bc4', '#5f6ef7'];
+const PALETTE_MONO = ['#1460aa', '#3e8fd6', '#0d4f8f', '#a8d1f2', '#0a3a66', '#c3e9fe', '#08253d', '#e8f3fd'];
+
+const SUSPENSE_PHRASES_MULT = 6;
+
+class Component extends DCLogic {
+  state = {
+    roster: NAMES.map(name => ({ name, present: true, picked: false })),
+    rotation: 0,
+    spinning: false,
+    winnerName: null,
+    showWinnerCard: false,
+    flickerName: '',
+    confettiPieces: [],
+    spinDurationSec: null,
+    scale: (typeof window !== 'undefined') ? Math.min(window.innerWidth / 1920, window.innerHeight / 1080, 1) : 1
+  };
+
+  flickerInterval = null;
+  revealTimeout = null;
+  confettiTimeout = null;
+  onResize = null;
+
+  componentDidMount() {
+    this.onResize = () => {
+      this.setState({ scale: Math.min(window.innerWidth / 1920, window.innerHeight / 1080, 1) });
+    };
+    window.addEventListener('resize', this.onResize);
+  }
+
+  componentWillUnmount() {
+    if (this.flickerInterval) clearInterval(this.flickerInterval);
+    if (this.revealTimeout) clearTimeout(this.revealTimeout);
+    if (this.confettiTimeout) clearTimeout(this.confettiTimeout);
+    if (this.onResize) window.removeEventListener('resize', this.onResize);
+  }
+
+  getActiveNames() {
+    return this.state.roster.filter(r => r.present && !r.picked).map(r => r.name);
+  }
+
+  toggleName(name) {
+    if (this.state.spinning) return;
+    this.setState(s => ({
+      roster: s.roster.map(r => r.name === name ? { ...r, present: !r.present } : r)
+    }));
+  }
+
+  handleSpin() {
+    if (this.state.spinning) return;
+    const active = this.getActiveNames();
+    if (active.length === 0) return;
+
+    const winnerIndex = Math.floor(Math.random() * active.length);
+    const winnerName = active[winnerIndex];
+    const segAngle = 360 / active.length;
+    const centerAngle = winnerIndex * segAngle + segAngle / 2;
+    const desiredFinalMod = ((360 - centerAngle) % 360 + 360) % 360;
+    const currentMod = ((this.state.rotation % 360) + 360) % 360;
+    let delta = desiredFinalMod - currentMod;
+    if (delta < 0) delta += 360;
+    const spins = 5;
+    const duration = (this.props.spinDurationSec ?? 4);
+
+    this.setState({
+      spinning: true,
+      showWinnerCard: false,
+      winnerName: null,
+      confettiPieces: [],
+      rotation: this.state.rotation + delta + spins * 360,
+      spinDurationSec: duration
+    });
+
+    this.flickerInterval = setInterval(() => {
+      const pool = this.getActiveNames();
+      this.setState({ flickerName: pool[Math.floor(Math.random() * pool.length)] });
+    }, 90);
+
+    this.revealTimeout = setTimeout(() => {
+      if (this.flickerInterval) { clearInterval(this.flickerInterval); this.flickerInterval = null; }
+      this.setState(s => ({
+        spinning: false,
+        winnerName,
+        showWinnerCard: true,
+        roster: s.roster.map(r => r.name === winnerName ? { ...r, picked: true } : r)
+      }));
+      this.spawnConfetti();
+    }, duration * 1000 + 60);
+  }
+
+  spawnConfetti() {
+    const colors = this.getPalette();
+    const pieces = Array.from({ length: 46 }, (_, i) => {
+      const color = colors[i % colors.length];
+      const left = Math.random() * 100;
+      const delay = Math.random() * 0.35;
+      const dur = 1.6 + Math.random() * 1.1;
+      const rotate = Math.random() * 360;
+      const size = 6 + Math.random() * 6;
+      return {
+        style: {
+          position: 'absolute',
+          top: '-10px',
+          left: left + '%',
+          width: size + 'px',
+          height: (size * 0.6) + 'px',
+          background: color,
+          borderRadius: '2px',
+          transform: `rotate(${rotate}deg)`,
+          animation: `confetti-fall ${dur}s ${delay}s ease-in forwards`,
+          zIndex: 30,
+          pointerEvents: 'none'
+        }
+      };
+    });
+    this.setState({ confettiPieces: pieces });
+    this.confettiTimeout = setTimeout(() => this.setState({ confettiPieces: [] }), 3200);
+  }
+
+  handleReset() {
+    if (this.state.spinning) return;
+    this.setState(s => ({
+      roster: s.roster.map(r => ({ ...r, picked: false })),
+      winnerName: null,
+      showWinnerCard: false,
+      confettiPieces: []
+    }));
+  }
+
+  getPalette() {
+    const theme = this.props.colorTheme ?? 'Colorful';
+    return theme === 'Brand Monochrome' ? PALETTE_MONO : PALETTE_COLORFUL;
+  }
+
+  renderVals() {
+    const active = this.getActiveNames();
+    const n = Math.max(active.length, 1);
+    const segAngle = 360 / n;
+    const palette = this.getPalette();
+    const radius = 310;
+    const labelRadius = 235;
+
+    const conicStops = active.map((name, i) => {
+      const color = palette[i % palette.length];
+      const from = (i * segAngle).toFixed(3);
+      const to = ((i + 1) * segAngle).toFixed(3);
+      return `${color} ${from}deg ${to}deg`;
+    }).join(', ');
+
+    const labelItems = active.map((name, i) => {
+      const centerAngle = i * segAngle + segAngle / 2;
+      let rot = centerAngle - 90;
+      rot = ((rot % 360) + 360) % 360;
+      if (rot > 90 && rot < 270) rot -= 180;
+      const rad = centerAngle * Math.PI / 180;
+      const x = Math.sin(rad) * labelRadius;
+      const y = -Math.cos(rad) * labelRadius;
+      return {
+        name,
+        style: {
+          position: 'absolute',
+          left: `calc(50% + ${x}px)`,
+          top: `calc(50% + ${y}px)`,
+          transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+          fontFamily: 'var(--font-family)',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#ffffff',
+          textShadow: '0 1px 3px rgba(0,0,0,0.55)',
+          whiteSpace: 'nowrap',
+          maxWidth: '150px',
+          textAlign: 'center',
+          pointerEvents: 'none'
+        }
+      };
+    });
+
+    const wheelOuterStyle = {
+      position: 'absolute',
+      width: (radius * 2) + 'px',
+      height: (radius * 2) + 'px',
+      borderRadius: '50%',
+      boxShadow: '0 18px 44px rgba(0,0,0,0.35), 0 0 0 10px #ffffff, 0 0 0 12px var(--color-border-secondary)',
+    };
+
+    const wheelStyle = {
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      position: 'relative',
+      background: n > 0 ? `conic-gradient(from 0deg, ${conicStops})` : 'var(--color-gray-20)',
+      transform: `rotate(${this.state.rotation}deg)`,
+      transition: this.state.spinning ? `transform ${this.state.spinDurationSec ?? 4}s cubic-bezier(0.12, 0.68, 0.1, 1)` : 'none'
+    };
+
+    const hubStyle = {
+      position: 'absolute',
+      top: '50%', left: '50%',
+      width: '54px', height: '54px',
+      transform: 'translate(-50%, -50%)',
+      borderRadius: '50%',
+      background: '#ffffff',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      border: '3px solid var(--color-brand)'
+    };
+
+    const pointerStyle = {
+      position: 'absolute',
+      top: '-6px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 0,
+      height: 0,
+      borderLeft: '18px solid transparent',
+      borderRight: '18px solid transparent',
+      borderTop: '30px solid var(--color-brand)',
+      zIndex: 20,
+      filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.3))'
+    };
+
+    const flickerStyle = {
+      position: 'absolute',
+      top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'rgba(21, 24, 32, 0.82)',
+      color: '#ffffff',
+      fontFamily: 'var(--font-family)',
+      fontWeight: 700,
+      fontSize: '26px',
+      padding: '18px 28px',
+      borderRadius: 'var(--default-radius, 8px)',
+      zIndex: 25,
+      textAlign: 'center',
+      minWidth: '220px'
+    };
+
+    const winnerCardStyle = {
+      position: 'absolute',
+      top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: '#ffffff',
+      padding: '26px 36px',
+      borderRadius: 'var(--default-radius, 8px)',
+      boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '8px',
+      zIndex: 25,
+      animation: 'pop-in 0.45s ease-out',
+      minWidth: '260px',
+      border: '2px solid var(--color-brand)'
+    };
+
+    const rosterRows = this.state.roster.map(r => ({
+      name: r.name,
+      present: r.present,
+      picked: r.picked,
+      onToggle: () => this.toggleName(r.name),
+      rowStyle: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '8px 4px',
+        opacity: r.picked ? 0.5 : 1,
+        borderBottom: '1px solid rgba(255,255,255,0.15)'
+      },
+      checkboxWrapStyle: {
+        position: 'relative',
+        display: 'inline-flex',
+        width: '22px',
+        height: '22px',
+        flexShrink: 0,
+        cursor: r.picked ? 'default' : 'pointer'
+      },
+      checkboxBoxStyle: {
+        display: 'flex',
+        width: '22px',
+        height: '22px',
+        borderRadius: '3px',
+        border: '2px solid ' + (r.present ? '#ef5f11' : 'rgba(255,255,255,0.4)'),
+        background: r.present ? '#ef5f11' : 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#ffffff',
+        fontSize: '13px',
+        lineHeight: 1
+      },
+      textStyle: {
+        fontFamily: 'var(--font-family)',
+        fontSize: '14px',
+        color: '#ffffff',
+        textDecoration: r.picked ? 'line-through' : 'none',
+        flex: 1
+      }
+    }));
+
+    const pickedCount = this.state.roster.filter(r => r.picked).length;
+    const presentCount = this.state.roster.filter(r => r.present).length;
+    const remainingLabel = active.length === 0
+      ? "Everyone's had a turn — hit Reset wheel to start a new round."
+      : `${active.length} of ${presentCount} left in this round`;
+
+    const btnBase = {
+      fontFamily: 'var(--font-family)',
+      fontSize: '15px',
+      fontWeight: 600,
+      borderRadius: 'var(--default-radius, 6px)',
+      padding: '0 22px',
+      height: '44px',
+      cursor: 'pointer',
+      transition: 'background-color .2s,color .2s,border-color .2s',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    };
+
+    const spinButtonStyle = {
+      ...btnBase,
+      background: this.state.spinning || active.length === 0 ? 'var(--color-disabled)' : 'var(--color-brand)',
+      color: '#ffffff',
+      border: '1px solid transparent',
+      minWidth: '190px',
+      opacity: this.state.spinning || active.length === 0 ? 0.7 : 1
+    };
+
+    const resetButtonStyle = {
+      ...btnBase,
+      background: 'transparent',
+      color: '#ffffff',
+      border: '1px solid #ffffff',
+      minWidth: '140px'
+    };
+
+    const cardStyle = {
+      width: '340px',
+      flexShrink: 0,
+      background: '#16324a',
+      color: '#ffffff',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+      borderRadius: '6px',
+      padding: '20px'
+    };
+
+    const hiddenCheckboxInputStyle = {
+      position: 'absolute',
+      top: 0, left: 0,
+      width: '100%', height: '100%',
+      margin: 0, padding: 0,
+      opacity: 0,
+      cursor: 'pointer'
+    };
+
+    return {
+      viewportStyle: {
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#1c2330',
+        overflow: 'hidden'
+      },
+      rootStyle: {
+        width: '1920px',
+        height: '1080px',
+        flexShrink: 0,
+        transform: `scale(${this.state.scale})`,
+        transformOrigin: 'center center',
+        background: '#0d2438',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        position: 'relative'
+      },
+      spinButtonStyle,
+      resetButtonStyle,
+      cardStyle,
+      hiddenCheckboxInputStyle,
+      pointerStyle,
+      wheelOuterStyle,
+      wheelStyle,
+      hubStyle,
+      labelItems,
+      spinning: this.state.spinning,
+      flickerStyle,
+      flickerName: this.state.flickerName,
+      showWinnerCard: this.state.showWinnerCard,
+      winnerCardStyle,
+      winnerName: this.state.winnerName,
+      questionOfTheWeekResolved: this.props.questionOfTheWeek ?? 'Favorite summertime activity (can be past or present)',
+      quickWinsStyle: {
+        background: '#0d2438',
+        borderRadius: 'var(--default-radius, 8px)',
+        padding: '24px 22px',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.2)'
+      },
+      confettiEnabledResolved: this.props.confettiEnabled ?? true,
+      confettiPieces: this.state.confettiPieces,
+      spinButtonLabel: this.state.spinning ? 'Spinning…' : (active.length === 0 ? 'Everyone picked!' : 'Spin the wheel'),
+      spinDisabled: this.state.spinning || active.length === 0,
+      handleSpin: () => this.handleSpin(),
+      handleReset: () => this.handleReset(),
+      remainingLabel,
+      rosterRows
+    };
+  }
+}
+
+</script>
+</body>
+</html>
