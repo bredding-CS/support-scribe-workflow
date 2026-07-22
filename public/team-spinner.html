@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who's Up Next?</title>
+<template id="__bundler_thumbnail" data-bg-color="#0d2438">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="34" fill="#0aa7e8"/>
+    <path d="M50 16 A34 34 0 0 1 84 50 L50 50 Z" fill="#ef5f11"/>
+    <path d="M84 50 A34 34 0 0 1 50 84 L50 50 Z" fill="#0abb94"/>
+    <circle cx="50" cy="50" r="8" fill="#fff"/>
+  </svg>
+</template>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0d2438; font-family: Georgia, 'Times New Roman', serif; width: 100%; height: 100%; overflow: hidden; }
+  .scaleHost { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .wrap { width: 1920px; height: 1080px; display: flex; flex-direction: column; position: relative; overflow: hidden; flex-shrink: 0; }
+  .header { padding: 26px 56px 0 56px; }
+  .title { font-size: 36px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; }
+  .subtitle { font-size: 15px; color: rgba(255,255,255,0.75); margin-top: 4px; }
+  .main { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; padding: 14px 56px 20px 56px; flex: 1; min-height: 0; }
+  .wheelCol { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; min-height: 0; }
+  .wheelBox { position: relative; width: 460px; height: 460px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .pointer { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
+    border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 24px solid #ef5f11; z-index: 20;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3)); }
+  .wheelOuter { position: absolute; width: 460px; height: 460px; border-radius: 50%;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.35), 0 0 0 8px #ffffff, 0 0 0 10px #16324a; }
+  .wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; transition: none; }
+  .label { position: absolute; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+    white-space: nowrap; max-width: 120px; text-align: center; pointer-events: none; }
+  .hub { position: absolute; top: 50%; left: 50%; width: 42px; height: 42px; transform: translate(-50%, -50%);
+    border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.25); border: 3px solid #ef5f11; }
+  .flicker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(21,24,32,0.82);
+    color: #fff; font-weight: 700; font-size: 26px; padding: 18px 28px; border-radius: 8px; z-index: 25; text-align: center;
+    min-width: 220px; display: none; }
+  .winnerCard { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff;
+    padding: 26px 36px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); display: none; flex-direction: column;
+    align-items: center; gap: 8px; z-index: 25; min-width: 260px; border: 2px solid #ef5f11; animation: pop-in 0.45s ease-out; }
+  .winnerCard.show { display: flex; }
+  .winnerLabel { font-size: 15px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #ef5f11; }
+  .winnerName { font-size: 38px; font-weight: 700; color: #0d2438; text-align: center; }
+  @keyframes pop-in { 0% { transform: translate(-50%,-50%) scale(0.6); opacity: 0; } 60% { transform: translate(-50%,-50%) scale(1.05); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+  @keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(620px) rotate(540deg); opacity: 0; } }
+  .confetti { position: absolute; border-radius: 2px; z-index: 30; pointer-events: none; top: -10px; }
+  .controls { display: flex; align-items: center; gap: 16px; }
+  button { font-family: inherit; font-size: 16px; font-weight: 600; border-radius: 6px; padding: 10px 24px; cursor: pointer; border: none; }
+  .btn-primary { background: #ef5f11; color: #fff; }
+  .btn-primary:disabled { background: #6b5544; cursor: not-allowed; opacity: 0.6; }
+  .btn-secondary { background: transparent; color: #fff; border: 1px solid #fff; }
+  .remaining { font-size: 14px; color: rgba(255,255,255,0.75); }
+  a { color: #82cef8; }
+  a:hover { color: #b7e2fb; }
+  .side { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+  .quickwins { background: #0d2438; border-radius: 12px; padding: 20px 28px; box-shadow: 0 10px 28px rgba(0,0,0,0.25); border: 1px solid #ef5f11; width: 100%; max-width: 1100px; }
+  .accent-bar { width: 60px; height: 6px; background: #ef5f11; border-radius: 2px; margin-bottom: 12px; }
+  .quickwins h2 { font-size: 26px; font-weight: 800; color: #fff; margin: 0 0 12px 0; }
+  .quickwins ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .quickwins li { font-size: 16px; color: #fff; }
+  .qow-label { font-weight: 700; display: block; margin-bottom: 6px; font-size: 16px; }
+  .qow-row { display: flex; gap: 12px; align-items: flex-start; }
+  #genBtn { flex-shrink: 0; background: #ef5f11; color: #fff; border: none; border-radius: 6px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  #genBtn:disabled { opacity: 0.6; cursor: default; }
+  .card { background: #16324a; color: #fff; box-shadow: 0 6px 18px rgba(0,0,0,0.25); border-radius: 6px; padding: 20px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin: 0 0 14px 0; }
+  .rosterList { display: flex; flex-direction: column; gap: 2px; max-height: 460px; overflow-y: auto; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .row.picked { opacity: 0.5; }
+  .row input[type="checkbox"] { width: 20px; height: 20px; accent-color: #ef5f11; cursor: pointer; }
+  .row .name { font-size: 14px; flex: 1; }
+  .row.picked .name { text-decoration: line-through; }
+  .doneTag { font-size: 11px; font-weight: 600; color: #0abb94; text-transform: uppercase; letter-spacing: 1px; }
+  .removeBtn { background: transparent; border: none; color: rgba(255,255,255,0.5); font-size: 16px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .removeBtn:hover { color: #ef5f11; }
+  .addRow { display: flex; gap: 8px; margin-top: 14px; }
+  #newName { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; color: #fff; font-family: inherit; font-size: 14px; padding: 8px 10px; }
+  #newName:focus { outline: none; border-color: #ef5f11; }
+  #addNameBtn { background: #ef5f11; color: #fff; border: none; border-radius: 4px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  #qow { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; color: #fff; font-family: inherit; font-size: 16px; font-weight: 400; width: 100%; padding: 10px 14px; resize: vertical; min-height: 56px; line-height: 1.4; flex: 1; }
+  #qow:focus { outline: none; border-color: #ef5f11; }
+</style>
+</head>
+<body>
+<div class="scaleHost" id="scaleHost">
+<div class="wrap" id="wrap">
+  <div class="header">
+    <h1 class="title">Who's Up Next?</h1>
+    <div class="subtitle">Spin the wheel to pick this week's team update speaker.</div>
+  </div>
+  <div class="main">
+    <div class="wheelCol">
+      <div class="wheelBox">
+        <div class="pointer"></div>
+        <div class="wheelOuter">
+          <div class="wheel" id="wheel"></div>
+          <div class="hub"></div>
+        </div>
+        <div class="flicker" id="flicker"></div>
+        <div class="winnerCard" id="winnerCard">
+          <div class="winnerLabel">You're up!</div>
+          <div class="winnerName" id="winnerName"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn-primary" id="spinBtn">Spin the wheel</button>
+        <button class="btn-secondary" id="resetBtn">Reset wheel</button>
+      </div>
+      <div class="remaining" id="remaining"></div>
+      <div class="quickwins">
+        <div class="accent-bar"></div>
+        <h2>Quick Wins</h2>
+        <ul>
+          <li>Personal Win</li>
+          <li>Business Win</li>
+          <li>
+            <span class="qow-label">Question of the week</span>
+            <div class="qow-row">
+              <textarea id="qow">Favorite summertime activity (can be past or present)</textarea>
+              <button id="genBtn">🎲 Generate</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3>Who's in today?</h3>
+        <div class="rosterList" id="rosterList"></div>
+        <div class="addRow">
+          <input id="newName" type="text" placeholder="Add a name…">
+          <button id="addNameBtn">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function fitScale() {
+  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  document.getElementById('wrap').style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', fitScale);
+fitScale();
+const NAMES = ["Ben Redding","Bryan Castro","Carolyn VanderMolen","Chimaobi Ohaja","Chris Fitzgerald",
+  "Diego Gomez","Guled Muhyadin Aw-Ali","Jacsen White","Karol Smulik","Mike Bialek",
+  "Mike Callaway","Milena Wesołowska","Nicole Robison","Patricia Flores","Rob Rubinas"];
+const PALETTE = ['#0aa7e8','#ede500','#0abb94','#edaf02','#82cef8','#ff702e','#e09bc4','#5f6ef7'];
+
+let roster = NAMES.map(name => ({ name, present: true, picked: false }));
+let rotation = 0, spinning = false, flickerInterval = null;
+
+const wheelEl = document.getElementById('wheel');
+const flickerEl = document.getElementById('flicker');
+const winnerCardEl = document.getElementById('winnerCard');
+const winnerNameEl = document.getElementById('winnerName');
+const spinBtn = document.getElementById('spinBtn');
+const resetBtn = document.getElementById('resetBtn');
+const remainingEl = document.getElementById('remaining');
+const rosterListEl = document.getElementById('rosterList');
+const wheelBox = document.querySelector('.wheelBox');
+
+function activeNames() { return roster.filter(r => r.present && !r.picked).map(r => r.name); }
+
+function render() {
+  const active = activeNames();
+  const n = Math.max(active.length, 1);
+  const seg = 360 / n;
+  const labelRadius = 175;
+  const stops = active.map((name, i) => `${PALETTE[i % PALETTE.length]} ${(i*seg).toFixed(3)}deg ${((i+1)*seg).toFixed(3)}deg`).join(', ');
+  wheelEl.style.background = active.length ? `conic-gradient(from 0deg, ${stops})` : '#33455a';
+  wheelEl.innerHTML = '';
+  active.forEach((name, i) => {
+    const center = i * seg + seg/2;
+    let rot = center - 90; rot = ((rot % 360)+360)%360; if (rot > 90 && rot < 270) rot -= 180;
+    const rad = center * Math.PI/180;
+    const x = Math.sin(rad)*labelRadius, y = -Math.cos(rad)*labelRadius;
+    const d = document.createElement('div');
+    d.className = 'label';
+    d.textContent = name;
+    d.style.left = `calc(50% + ${x}px)`;
+    d.style.top = `calc(50% + ${y}px)`;
+    d.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+    wheelEl.appendChild(d);
+  });
+
+  const presentCount = roster.filter(r => r.present).length;
+  remainingEl.textContent = active.length === 0
+    ? "Everyone's had a turn — hit Reset wheel to start a new round."
+    : `${active.length} of ${presentCount} left in this round`;
+  spinBtn.disabled = spinning || active.length === 0;
+  spinBtn.textContent = spinning ? 'Spinning…' : (active.length === 0 ? 'Everyone picked!' : 'Spin the wheel');
+
+  rosterListEl.innerHTML = '';
+  roster.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'row' + (r.picked ? ' picked' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = r.present; cb.disabled = r.picked || spinning;
+    cb.onchange = () => { r.present = cb.checked; render(); };
+    const nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = r.name;
+    row.appendChild(cb); row.appendChild(nameEl);
+    if (r.picked) { const tag = document.createElement('div'); tag.className = 'doneTag'; tag.textContent = 'Done'; row.appendChild(tag); }
+    const rm = document.createElement('button');
+    rm.className = 'removeBtn'; rm.textContent = '✕'; rm.title = 'Remove';
+    rm.disabled = spinning;
+    rm.onclick = () => { roster = roster.filter(x => x !== r); render(); };
+    row.appendChild(rm);
+    rosterListEl.appendChild(row);
+  });
+}
+
+function addName() {
+  const input = document.getElementById('newName');
+  const name = input.value.trim();
+  if (!name) return;
+  roster.push({ name, present: true, picked: false });
+  input.value = '';
+  render();
+}
+
+function spawnConfetti() {
+  for (let i = 0; i < 46; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    const size = 6 + Math.random()*6;
+    el.style.left = (Math.random()*100) + '%';
+    el.style.width = size + 'px';
+    el.style.height = (size*0.6) + 'px';
+    el.style.background = PALETTE[i % PALETTE.length];
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    const dur = 1.6 + Math.random()*1.1, delay = Math.random()*0.35;
+    el.style.animation = `confetti-fall ${dur}s ${delay}s ease-in forwards`;
+    wheelBox.appendChild(el);
+    setTimeout(() => el.remove(), (dur+delay)*1000 + 100);
+  }
+}
+
+function spin() {
+  const active = activeNames();
+  if (spinning || active.length === 0) return;
+  const winnerIndex = Math.floor(Math.random()*active.length);
+  const winnerName = active[winnerIndex];
+  const seg = 360/active.length;
+  const centerAngle = winnerIndex*seg + seg/2;
+  const desiredFinalMod = ((360-centerAngle)%360+360)%360;
+  const currentMod = ((rotation%360)+360)%360;
+  let delta = desiredFinalMod - currentMod;
+  if (delta < 0) delta += 360;
+  const duration = 4;
+  spinning = true;
+  winnerCardEl.classList.remove('show');
+  rotation += delta + 5*360;
+  wheelEl.style.transition = `transform ${duration}s cubic-bezier(0.12,0.68,0.1,1)`;
+  wheelEl.style.transform = `rotate(${rotation}deg)`;
+  render();
+  flickerEl.style.display = 'block';
+  flickerInterval = setInterval(() => {
+    const pool = activeNames();
+    flickerEl.textContent = pool[Math.floor(Math.random()*pool.length)];
+  }, 90);
+  setTimeout(() => {
+    clearInterval(flickerInterval); flickerInterval = null;
+    flickerEl.style.display = 'none';
+    spinning = false;
+    roster.forEach(r => { if (r.name === winnerName) r.picked = true; });
+    winnerNameEl.textContent = winnerName;
+    winnerCardEl.classList.add('show');
+    spawnConfetti();
+    render();
+  }, duration*1000 + 60);
+}
+
+function reset() {
+  if (spinning) return;
+  roster.forEach(r => r.picked = false);
+  winnerCardEl.classList.remove('show');
+  render();
+}
+
+const FALLBACK_QUESTIONS = [
+  "If you could instantly master one skill, what would it be?",
+  "What's a small thing that always makes your day better?",
+  "Beach vacation or mountain cabin — pick one and defend it.",
+  "What's the best thing you've eaten in the last month?",
+  "If your life had a theme song right now, what would it be?",
+  "What's a hobby you'd try if you had unlimited time?",
+  "Coffee, tea, or something else — what gets you going in the morning?",
+  "What's the most underrated movie or show you've seen?",
+  "If you could teleport anywhere for the weekend, where would you go?",
+  "What's a game you could play forever and never get tired of?",
+  "What's your go-to karaoke song?",
+  "What's the best gift you've ever received?",
+  "If you had a talk show, who would your first guest be?",
+  "What's a food you refuse to eat?",
+  "What's your favorite way to spend a rainy day?",
+  "If you could live in any decade, which would you pick?",
+  "What's the last thing that made you laugh out loud?",
+  "What's a skill you have that most people don't know about?",
+  "If you could have dinner with anyone, living or dead, who would it be?",
+  "What's your comfort movie or show you rewatch on repeat?",
+  "What's the weirdest food combination you actually enjoy?",
+  "What's your dream vacation destination?",
+  "If you won the lottery tomorrow, what's the first thing you'd buy?",
+  "What's a childhood snack you still crave?",
+  "What's your favorite season and why?",
+  "If you could swap jobs with anyone for a day, who would it be?",
+  "What's the most spontaneous thing you've ever done?",
+  "What's your favorite way to unwind after work?",
+  "What's a movie you can quote from start to finish?",
+  "If you had to eat one meal for the rest of your life, what would it be?",
+  "What's the best concert or live show you've been to?",
+  "What's your favorite holiday and why?",
+  "If you could learn any language instantly, which would you choose?",
+  "What's a book or show that completely changed your perspective?",
+  "What's your go-to comfort food?",
+  "If you could have any superpower, what would it be?",
+  "What's a fun fact about you that surprises people?",
+  "What's your favorite way to spend a weekend?",
+  "If you could time travel, would you go to the past or future?",
+  "What's the best advice you've ever received?",
+  "What's your favorite board game or card game?",
+  "If you could master any instrument overnight, which would you pick?",
+  "What's a place you've always wanted to visit but haven't yet?",
+  "What's your favorite dessert of all time?",
+  "If you could only watch one genre of movies forever, what would it be?",
+  "What's the most unusual job you've ever had?",
+  "What's your favorite thing about your hometown?",
+  "If you could bring back any fashion trend, what would it be?",
+  "What's a TV show you finished in one weekend?",
+  "What's your favorite smell that instantly makes you happy?",
+  "If you could be fluent in any skill by tomorrow, what would it be?",
+  "What's the last new restaurant you tried and loved?",
+  "What's your favorite way to celebrate a win?",
+  "If you had a personal theme park ride, what would it be like?",
+  "What's a hidden talent you have?",
+  "What's your favorite thing to do on a lazy Sunday?",
+  "If you could redesign your workspace, what would it look like?",
+  "What's the most memorable trip you've ever taken?",
+  "What's your favorite type of music to work to?",
+  "If you could only keep three apps on your phone, which would they be?",
+  "What's a class or subject you wish you'd studied more?",
+  "What's your favorite thing about the changing seasons?",
+  "If you could instantly become an expert cook of one cuisine, which?",
+  "What's the best piece of pop culture from your childhood?",
+  "What's your ideal way to spend a snow day?",
+  "If you could adopt any animal as a pet, real or fictional, what would it be?",
+  "What's a song that instantly puts you in a good mood?",
+  "What's your favorite thing to collect?",
+  "If you could relive one day of your life, which would it be?",
+  "What's the most interesting thing you've learned recently?",
+  "What's your favorite way to explore a new city?",
+  "If you could design your dream house, what's one must-have feature?",
+  "What's a nostalgic toy or game from your childhood?",
+  "What's your go-to breakfast?",
+  "If you could pick up a new hobby this year, what would it be?",
+  "What's the best piece of advice for a stressful week?",
+  "What's your favorite thing about weekends?",
+  "If you could witness any historical event, what would you choose?",
+  "What's a small win you're proud of this week?",
+  "What's your favorite way to treat yourself?",
+  "If you could master a dance style, which would you pick?",
+  "What's the funniest thing that's happened to you at work?",
+  "What's your favorite thing to binge-watch?",
+  "If you could visit any fictional world, which would you choose?",
+  "What's a skill from a previous job you still use today?",
+  "What's your favorite way to stay active?",
+  "If you could only listen to one artist for a year, who would it be?",
+  "What's the best team outing you've ever been on?",
+  "What's your favorite thing about mornings?",
+  "If you could time-skip one chore forever, which would it be?",
+  "What's a favorite family tradition you have?",
+  "What's your go-to road trip snack?",
+  "If you could learn to play any sport professionally, which would it be?",
+  "What's the most underrated city you've visited?",
+  "What's your favorite way to celebrate a birthday?",
+  "If you could have any view from your office window, what would it be?",
+  "What's a favorite quote or saying you live by?",
+  "What's your favorite thing to do with friends on a night off?",
+  "If you could master any craft (painting, pottery, etc.), which would you pick?",
+  "What's the coziest place you've ever stayed?",
+  "What's your favorite way to spend a long weekend?",
+  "If you could bring one fictional gadget to life, what would it be?",
+  "What's a hobby you had as a kid that you miss?",
+  "What's your favorite thing about your morning commute (or lack of one)?",
+  "If you could only eat food from one country for a month, which would you choose?",
+  "What's the last thing you got way too excited about?",
+  "What's your favorite way to reset after a busy week?",
+  "If you could co-host a podcast with anyone, who would it be?",
+  "What's your favorite thing to do outdoors?",
+  "If you could have any animal as your office mascot, what would it be?",
+  "What's the best souvenir you've ever brought home?",
+  "What's your favorite way to spend your ideal Friday night?",
+  "If you could pick any theme song for your entrance at meetings, what would it be?",
+  "What's a random skill you'd love to learn just for fun?",
+  "What's your favorite kind of weather?",
+  "If you could switch lives with a fictional character for a day, who would it be?",
+  "What's your favorite thing to do when you're procrastinating?",
+  "What's the best thing about your favorite season?",
+  "If you had a personal catchphrase, what would it be?",
+  "What's your favorite way to spend time with family?",
+  "If you could master any video game instantly, which would you choose?",
+  "What's a place near you that people underrate?",
+  "What's your favorite thing to cook or bake?",
+  "If you could be a contestant on any game show, which would you pick?",
+  "What's your favorite thing about being on this team?",
+  "If you could give your past self one piece of advice, what would it be?",
+  "What's your favorite scent for a candle?",
+  "If you could have a lifetime supply of one thing, what would it be?",
+  "What's the best team lunch spot you know?",
+  "What's your favorite thing to do first thing when you get home?",
+  "If you could master a magic trick, which would you pick?",
+  "What's your favorite way to spend a rainy afternoon?",
+  "If you could travel anywhere using only trains, where would you go?",
+  "What's your favorite thing about the city or town you live in?",
+  "If you could be an expert in a random trivia category, which would you choose?",
+  "What's your favorite way to start a workday?",
+  "If you could design your own ice cream flavor, what would it be?",
+  "What's your favorite memory from a past team event?",
+  "If you could have any accent, which would you choose?",
+  "What's your favorite thing about your daily routine?",
+  "If you could instantly be great at one sport, which would it be?",
+  "What's the best piece of tech you own?",
+  "What's your favorite way to celebrate small wins at work?",
+  "If you could plan the ultimate team offsite, where would it be?",
+  "What's your favorite thing to do on your day off?",
+  "If you could have any fictional pet, what would you choose?",
+  "What's your favorite thing about fall/autumn?",
+  "If you could master a new recipe this weekend, what would it be?",
+  "What's your favorite thing to listen to during a commute?",
+  "If you could take a class on anything for fun, what would it be?",
+  "What's your favorite way to spend a coffee break?",
+  "If you could have any job for just one day, what would you choose?",
+  "What's your favorite childhood cartoon?",
+  "If you could instantly speak any accent perfectly, which would you pick?",
+  "What's your favorite thing about the current season?",
+  "If you could relive any concert or event, which would it be?",
+  "What's your favorite way to spend an evening in?",
+  "If you could bring any historical figure to a team meeting, who would it be?",
+  "What's your favorite snack to keep at your desk?",
+  "If you could master any DIY project, what would it be?",
+  "What's your favorite thing about weekends off?",
+  "If you could pick a theme for the next team event, what would it be?",
+  "What's your favorite way to celebrate the end of a big project?",
+  "If you could have a personal chef cook one dish, what would it be?",
+  "What's your favorite thing to do when you need a mental break?",
+  "If you could have any view outside your window right now, what would it be?",
+  "What's your favorite thing about your morning routine?",
+  "If you could master one new tech skill, what would it be?",
+  "What's your favorite way to relax before bed?",
+  "If you could have any theme song play when you walk into a room, what would it be?",
+  "What's your favorite thing about spring?",
+  "If you could plan a surprise for the team, what would it be?",
+  "What's your favorite thing to do to celebrate a Friday?",
+  "If you could master any outdoor activity, what would it be?",
+  "What's your favorite thing about working with this team?"
+];
+
+async function generateQuestion() {
+  const genBtn = document.getElementById('genBtn');
+  genBtn.disabled = true;
+  genBtn.textContent = '…';
+  try {
+    if (window.claude && window.claude.complete) {
+      const text = await window.claude.complete(
+        "Generate exactly one short, fun, light-hearted icebreaker question for a casual team meeting. " +
+        "No preamble, no quotes, just the single question, under 20 words."
+      );
+      document.getElementById('qow').value = text.trim().replace(/^["']|["']$/g, '');
+    } else {
+      throw new Error('no claude api');
+    }
+  } catch (e) {
+    document.getElementById('qow').value = FALLBACK_QUESTIONS[Math.floor(Math.random()*FALLBACK_QUESTIONS.length)];
+  } finally {
+    genBtn.disabled = false;
+    genBtn.textContent = '🎲 Generate';
+  }
+}
+
+spinBtn.onclick = spin;
+resetBtn.onclick = reset;
+document.getElementById('genBtn').onclick = generateQuestion;
+document.getElementById('addNameBtn').onclick = addName;
+document.getElementById('newName').addEventListener('keydown', e => { if (e.key === 'Enter') addName(); });
+render();
+</script>
+</body>
+</html>
